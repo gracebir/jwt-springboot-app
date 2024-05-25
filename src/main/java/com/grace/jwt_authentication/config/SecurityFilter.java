@@ -20,17 +20,18 @@ public class SecurityFilter {
     private AuthenticationProvider authenticationProvider;
 
     @Autowired
-    private JwtAuthenticationFlter jwtAuthenticationFlter;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(crfConfig-> crfConfig.disable())
                 .sessionManagement(sessionMangConfig -> sessionMangConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthenticationFlter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authConfig-> {
                     authConfig.requestMatchers(HttpMethod.POST, "/auth/authenticate").permitAll();
-                    authConfig.requestMatchers("errros").permitAll();
+                    authConfig.requestMatchers(HttpMethod.POST, "/auth/register").permitAll();
+                    authConfig.requestMatchers("error").permitAll();
 
                     authConfig.requestMatchers(HttpMethod.GET, "/products").hasAnyAuthority(Permissions.READ_ALL_PRODUCTS.name());
                     authConfig.requestMatchers(HttpMethod.GET, "/products").hasAnyAuthority(Permissions.SAVE_ONE_PRODUCT.name());

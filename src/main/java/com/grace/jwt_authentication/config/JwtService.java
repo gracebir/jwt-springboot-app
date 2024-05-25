@@ -1,6 +1,7 @@
 package com.grace.jwt_authentication.config;
 
 import com.grace.jwt_authentication.user.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -9,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
@@ -16,36 +19,39 @@ import java.util.Objects;
 
 @Service
 public class JwtService {
-    @Value("${security.jwt.expiration.minutes}")
-    private Long EXPIRATION_MINUTES;
 
-    @Value("${security.jwt.secret.key}")
+    @Value("${security.jwt.expiration-minutes}")
+    private long EXPIRATION_MINUTES;
+
+    @Value("${security.jwt.secret-key}")
     private String SECRET_KEY;
 
-    public String generateToken(User user, Map<String, Object> extraClaims){
-        Date issueAt = new Date(System.currentTimeMillis());
-        Date expiration = new Date(issueAt.getTime() + (EXPIRATION_MINUTES * 1000));
+
+    public String generateToken(User user, Map<String, Object> extraClaims) {
+        Date issuedAt = new Date(System.currentTimeMillis());
+        Date expiration = new Date(issuedAt.getTime() + (EXPIRATION_MINUTES * 60 * 1000));
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(user.getUsername())
-                .setIssuedAt(issueAt)
+                .setIssuedAt(issuedAt)
                 .setExpiration(expiration)
-                .signWith(generatekey(), SignatureAlgorithm.ES256)
+                .signWith(generateKey(), SignatureAlgorithm.HS256)
                 .compact();
-
     }
 
-    private Key generatekey() {
-        byte[] secreteAsBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(secreteAsBytes);
+
+    private Key generateKey(){
+        byte[] secreateAsBytes = Decoders.BASE64.decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(secreateAsBytes);
     }
 
     public String extractUsername(String jwt) {
-        return extractAllClaims(jwt);
+        return extractAllClaims(jwt).getSubject();
     }
 
-    private String extractAllClaims(String jwt) {
-        return Jwts.parser().setSigningKey(generatekey()).build()
-                .parseClaimsJws(jwt).getBody().getSubject();
+    private Claims extractAllClaims(String jwt) {
+        return Jwts.parserBuilder().setSigningKey(generateKey()).build()
+                .parseClaimsJws(jwt).getBody();
     }
+
 }
