@@ -22,7 +22,7 @@ public class JwtService {
     @Value("${security.jwt.secret.key}")
     private String SECRET_KEY;
 
-    public String generateToken(User user, Map<String, Objects> extraClaims){
+    public String generateToken(User user, Map<String, Object> extraClaims){
         Date issueAt = new Date(System.currentTimeMillis());
         Date expiration = new Date(issueAt.getTime() + (EXPIRATION_MINUTES * 1000));
         return Jwts.builder()
@@ -38,5 +38,14 @@ public class JwtService {
     private Key generatekey() {
         byte[] secreteAsBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(secreteAsBytes);
+    }
+
+    public String extractUsername(String jwt) {
+        return extractAllClaims(jwt);
+    }
+
+    private String extractAllClaims(String jwt) {
+        return Jwts.parser().setSigningKey(generatekey()).build()
+                .parseClaimsJws(jwt).getBody().getSubject();
     }
 }
